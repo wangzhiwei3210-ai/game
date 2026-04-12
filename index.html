@@ -358,6 +358,8 @@
                 this.highScore = parseInt(localStorage.getItem('snake_highscore')) || 0;
                 this.state = GameState.PLAYING;
                 this.gameSpeed = DIFFICULTIES.medium;
+                this.baseGameSpeed = DIFFICULTIES.medium;
+                this.activeDirections = new Set();
                 this.lastTime = 0;
 
                 // 绑定输入处理
@@ -552,6 +554,18 @@
                 document.addEventListener('keydown', (e) => {
                     if (this.state !== GameState.PLAYING) return;
 
+                    // 检测方向键加速
+                    const directionKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D'];
+                    if (directionKeys.includes(e.key)) {
+                        this.activeDirections.add(e.key);
+                        // 如果按住方向键超过2个不同的键，或者按住同一个键超过一定时间，启用加速
+                        if (this.activeDirections.size >= 1) {
+                            // 按住方向键时加速
+                            this.gameSpeed = this.baseGameSpeed / 2;
+                        }
+                        return;
+                    }
+
                     switch (e.key) {
                         case 'ArrowUp':
                         case 'w':
@@ -582,6 +596,19 @@
                             e.preventDefault();
                             this.togglePause();
                             break;
+                    }
+                });
+
+                // 按键释放事件
+                document.addEventListener('keyup', (e) => {
+                    // 方向键释放时恢复原速度
+                    const directionKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D'];
+                    if (directionKeys.includes(e.key)) {
+                        this.activeDirections.delete(e.key);
+                        // 如果没有方向键被按住，恢复原速度
+                        if (this.activeDirections.size === 0) {
+                            this.gameSpeed = this.baseGameSpeed;
+                        }
                     }
                 });
 
