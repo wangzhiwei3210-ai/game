@@ -374,6 +374,7 @@
 
                 // 更新显示
                 this.updateUI();
+                this.lastMoveTime = Date.now();
             }
 
             // 调整画布大小
@@ -714,6 +715,8 @@
                 this.state = GameState.PLAYING;
                 this.spawnFood();
                 this.updateUI();
+                this.activeDirections.clear(); // 清除所有加速状态
+                this.lastMoveTime = Date.now();
 
                 document.getElementById('game-over-menu').classList.add('hidden');
                 document.getElementById('pause-menu').classList.add('hidden');
