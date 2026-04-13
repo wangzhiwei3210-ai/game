@@ -416,6 +416,11 @@
             // 游戏循环
             gameLoop(timestamp) {
                 if (this.state === GameState.PLAYING) {
+                    // 如果lastTime为0（第一次调用），设置它为当前时间
+                    if (this.lastTime === 0) {
+                        this.lastTime = timestamp;
+                    }
+
                     // 动态计算当前速度：如果有方向键被按住，使用加速速度
                     const currentSpeed = this.activeDirections.size > 0 ? this.baseGameSpeed / 2 : this.gameSpeed;
 
