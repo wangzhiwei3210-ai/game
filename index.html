@@ -360,7 +360,7 @@
                 this.gameSpeed = DIFFICULTIES.medium;
                 this.baseGameSpeed = DIFFICULTIES.medium;
                 this.activeDirections = new Set();
-                this.lastTime = 0;
+                this.lastTime = null; // 使用null表示尚未初始化
 
                 // 绑定输入处理
                 this.bindInput();
@@ -416,18 +416,22 @@
             // 游戏循环
             gameLoop(timestamp) {
                 if (this.state === GameState.PLAYING) {
-                    // 如果lastTime为0（第一次调用），设置它为当前时间
-                    if (this.lastTime === 0) {
+                    // 如果lastTime为null（第一次调用），设置它为当前时间
+                    if (this.lastTime === null) {
                         this.lastTime = timestamp;
                     }
 
                     // 动态计算当前速度：如果有方向键被按住，使用加速速度
                     const currentSpeed = this.activeDirections.size > 0 ? this.baseGameSpeed / 2 : this.gameSpeed;
 
+                    // 只有当时间间隔达到要求时才更新
                     if (timestamp - this.lastTime >= currentSpeed) {
                         this.update();
                         this.lastTime = timestamp;
                     }
+                } else {
+                    // 如果不是游戏中状态，也更新lastTime
+                    this.lastTime = timestamp;
                 }
                 this.render();
                 requestAnimationFrame(this.gameLoop);
