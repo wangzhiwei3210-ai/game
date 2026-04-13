@@ -368,9 +368,12 @@
                 // 初始化食物
                 this.spawnFood();
 
-                // 开始游戏循环
+                // 延迟启动游戏循环，确保初始化完成
                 this.gameLoop = this.gameLoop.bind(this);
-                requestAnimationFrame(this.gameLoop);
+                setTimeout(() => {
+                    this.lastTime = performance.now();
+                    requestAnimationFrame(this.gameLoop);
+                }, 100);
 
                 // 更新显示
                 this.updateUI();
