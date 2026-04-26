@@ -170,6 +170,16 @@
             transform: translateY(-2px);
         }
 
+        .revive-btn {
+            background: #f59e0b;
+            color: #1e3c72;
+        }
+
+        .revive-btn:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+
         .leaderboard-btn {
             padding: 8px 20px;
             border: none;
@@ -342,6 +352,7 @@
         <h2>游戏结束</h2>
         <p class="final-score">最终得分: <span id="final-score">0</span></p>
         <div id="new-record" style="color:#ffd700;font-size:16px;margin-bottom:15px;display:none;">🎉 新纪录！</div>
+        <button id="revive-btn" class="menu-btn revive-btn">💪 复活一次</button>
         <button id="share-score-btn" class="share-btn" style="margin-bottom:15px;">📤 分享成绩</button>
         <button id="play-again-btn" class="menu-btn">再玩一次</button>
     </div>
@@ -479,6 +490,8 @@
                 this.activeKeys = new Set();
                 this.lastTime = null; // 使用null表示尚未初始化
                 this._lastScoreTimestamp = 0;
+                this.history = [];
+                this.reviveUsed = false;
 
                 // 绑定输入处理
                 this.bindInput();
@@ -558,8 +571,26 @@
                 requestAnimationFrame(this.gameLoop);
             }
 
+            // 保存当前状态到历史（用于复活）
+            saveState() {
+                this.history.push({
+                    body: this.snake.body.map(s => ({ ...s })),
+                    direction: { ...this.snake.direction },
+                    nextDirection: { ...this.snake.nextDirection },
+                    food: { ...this.food },
+                    score: this.score
+                });
+                // 最多保存 20 步历史
+                if (this.history.length > 20) {
+                    this.history.shift();
+                }
+            }
+
             // 更新游戏状态
             update() {
+                // 在移动前保存状态（用于复活）
+                this.saveState();
+
                 this.snake.move();
 
                 // 检查碰撞
@@ -838,6 +869,11 @@
                         this.fallbackCopy(text);
                     }
                 });
+
+                // 复活按钮
+                document.getElementById('revive-btn').addEventListener('click', () => {
+                    this.revive();
+                });
             }
 
             // 兼容的复制方式
@@ -987,7 +1023,9 @@
                     localStorage.setItem('snake_highscore', this.highScore);
                 }
 
-                // 添加到排行榜
+                // 添加到排行榜前先移除历史中的最后一条（死亡前保存的无效状态）
+                this.history.pop();
+
                 const isNewRecord = this.addScoreToLeaderboard(this.score);
 
                 this.updateUI();
@@ -995,8 +1033,45 @@
                 // 显示游戏结束菜单
                 document.getElementById('final-score').textContent = this.score;
                 document.getElementById('new-record').style.display = isNewRecord ? 'block' : 'none';
+                // 如果未使用过复活且有足够历史，显示复活按钮
+                const canRevive = !this.reviveUsed && this.history.length >= 3;
+                document.getElementById('revive-btn').style.display = canRevive ? 'block' : 'none';
                 document.getElementById('game-over-menu').classList.remove('hidden');
                 document.getElementById('pause-btn').textContent = '重新开始';
+            }
+
+            // 复活：回到5步前的状态
+            revive() {
+                if (this.reviveUsed || this.history.length < 1) return;
+
+                this.reviveUsed = true;
+
+                // 回到5步前（或最早可用的状态）
+                const stepsBack = Math.min(5, this.history.length);
+                const state = this.history[this.history.length - stepsBack];
+
+                // 恢复蛇的状态
+                this.snake.body = state.body.map(s => ({ ...s }));
+                this.snake.direction = { ...state.direction };
+                this.snake.nextDirection = { ...state.nextDirection };
+                this.snake.growing = false;
+
+                // 恢复食物和分数
+                this.food = { ...state.food };
+                this.score = state.score;
+
+                // 清除历史中这个时间点之后的所有记录
+                this.history = this.history.slice(0, this.history.length - stepsBack + 1);
+
+                // 恢复游戏状态
+                this.state = GameState.PLAYING;
+                this.lastTime = performance.now();
+                this.gameSpeed = this.baseGameSpeed;
+
+                // UI
+                document.getElementById('game-over-menu').classList.add('hidden');
+                document.getElementById('pause-btn').textContent = '暂停';
+                this.updateUI();
             }
 
             // 重新开始
@@ -1010,6 +1085,8 @@
                 this.spawnFood();
                 this.updateUI();
                 this.activeKeys.clear();
+                this.history = [];
+                this.reviveUsed = false;
                 this.lastMoveTime = Date.now();
 
                 document.getElementById('game-over-menu').classList.add('hidden');
