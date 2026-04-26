@@ -205,9 +205,9 @@
         </div>
 
         <div class="difficulty-selector">
-            <button class="difficulty-btn" data-speed="150">慢速</button>
-            <button class="difficulty-btn active" data-speed="100">中速</button>
-            <button class="difficulty-btn" data-speed="60">快速</button>
+            <button class="difficulty-btn" data-speed="600">慢速</button>
+            <button class="difficulty-btn active" data-speed="400">中速</button>
+            <button class="difficulty-btn" data-speed="240">快速</button>
         </div>
 
         <button id="pause-btn" class="pause-btn">暂停</button>
@@ -646,7 +646,8 @@
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                        this.gameSpeed = parseInt(btn.dataset.speed);
+                        this.baseGameSpeed = parseInt(btn.dataset.speed);
+                        this.gameSpeed = this.baseGameSpeed;
                     });
                 });
 
