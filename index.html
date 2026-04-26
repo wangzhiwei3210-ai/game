@@ -570,41 +570,36 @@
                 document.addEventListener('keydown', (e) => {
                     if (this.state !== GameState.PLAYING) return;
 
-                    // 检测方向键加速
+                    // 检测方向键加速 + 方向控制
                     const directionKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D'];
                     if (directionKeys.includes(e.key)) {
+                        e.preventDefault();
                         this.activeDirections.add(e.key);
-                        // 如果按住方向键超过2个不同的键，或者按住同一个键超过一定时间，启用加速
+                        // 按住任意方向键时加速
                         if (this.activeDirections.size >= 1) {
-                            // 按住方向键时加速
                             this.gameSpeed = this.baseGameSpeed / 2;
                         }
-                        return;
                     }
 
                     switch (e.key) {
                         case 'ArrowUp':
                         case 'w':
                         case 'W':
-                            e.preventDefault();
                             this.snake.setDirection(0, -1);
                             break;
                         case 'ArrowDown':
                         case 's':
                         case 'S':
-                            e.preventDefault();
                             this.snake.setDirection(0, 1);
                             break;
                         case 'ArrowLeft':
                         case 'a':
                         case 'A':
-                            e.preventDefault();
                             this.snake.setDirection(-1, 0);
                             break;
                         case 'ArrowRight':
                         case 'd':
                         case 'D':
-                            e.preventDefault();
                             this.snake.setDirection(1, 0);
                             break;
                         case ' ':
