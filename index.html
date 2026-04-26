@@ -136,6 +136,32 @@
             z-index: 100;
         }
 
+        .menu-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 18px;
+            line-height: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+            padding: 0;
+        }
+
+        .menu-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .menu-close:active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
         .menu.hidden {
             display: none;
         }
@@ -382,12 +408,14 @@
     </div>
 
     <div id="pause-menu" class="menu hidden">
+        <button class="menu-close" data-close="pause-menu">✕</button>
         <h2>游戏暂停</h2>
         <button id="resume-btn" class="menu-btn">继续游戏</button>
         <button id="restart-btn" class="menu-btn">重新开始</button>
     </div>
 
     <div id="game-over-menu" class="menu hidden">
+        <button class="menu-close" data-close="gameover">✕</button>
         <h2>游戏结束</h2>
         <p class="final-score">最终得分: <span id="final-score">0</span></p>
         <div id="new-record" style="color:#ffd700;font-size:16px;margin-bottom:15px;display:none;">🎉 新纪录！</div>
@@ -398,6 +426,7 @@
 
     <!-- 排行榜 -->
     <div id="leaderboard-menu" class="menu hidden">
+        <button class="menu-close" data-close="leaderboard">✕</button>
         <h2>🏆 排行榜</h2>
         <div id="leaderboard-content">
             <div class="no-scores">暂无记录</div>
@@ -856,6 +885,21 @@
                         btn.classList.add('active');
                         this.baseGameSpeed = parseInt(btn.dataset.speed);
                         this.gameSpeed = this.baseGameSpeed;
+                    });
+                });
+
+                // 弹窗关闭按钮
+                document.querySelectorAll('.menu-close').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const target = e.currentTarget.dataset.close;
+                        if (target === 'pause-menu') {
+                            this.togglePause();
+                        } else if (target === 'gameover') {
+                            document.getElementById('game-over-menu').classList.add('hidden');
+                            document.getElementById('pause-btn').textContent = '重新开始';
+                        } else if (target === 'leaderboard') {
+                            this.closeLeaderboard();
+                        }
                     });
                 });
 
