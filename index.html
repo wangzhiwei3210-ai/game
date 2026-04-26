@@ -359,7 +359,7 @@
                 this.state = GameState.PLAYING;
                 this.gameSpeed = DIFFICULTIES.medium;
                 this.baseGameSpeed = DIFFICULTIES.medium;
-                this.activeDirections = new Set();
+                this.activeKeys = new Set();
                 this.lastTime = null; // 使用null表示尚未初始化
 
                 // 绑定输入处理
@@ -424,8 +424,8 @@
                         this.lastTime = timestamp;
                     }
 
-                    // 动态计算当前速度：如果有方向键被按住，使用加速速度
-                    const currentSpeed = this.activeDirections.size > 0 ? this.baseGameSpeed / 4 : this.gameSpeed;
+                    // 按住方向键时加速到5倍速度
+                    const currentSpeed = this.activeKeys.size > 0 ? Math.floor(this.baseGameSpeed / 5) : this.gameSpeed;
 
                     // 只有当时间间隔达到要求时才更新
                     if (timestamp - this.lastTime >= currentSpeed) {
@@ -505,8 +505,9 @@
                     const x = segment.x * this.gridSize + padding;
                     const y = segment.y * this.gridSize + padding;
 
-                    // 蛇头和蛇身颜色
-                    this.ctx.fillStyle = index === 0 ? GAME_CONFIG.SNAKE_COLOR : GAME_CONFIG.SNAKE_BODY_COLOR;
+                    // 蛇头和蛇身颜色（加速时蛇头变红色）
+                    const headColor = this.activeKeys.size > 0 ? '#ff4444' : GAME_CONFIG.SNAKE_COLOR;
+                    this.ctx.fillStyle = index === 0 ? headColor : GAME_CONFIG.SNAKE_BODY_COLOR;
 
                     // 绘制圆角矩形
                     this.drawRoundedRect(x, y, size, size, 4);
@@ -574,11 +575,9 @@
                     const directionKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D'];
                     if (directionKeys.includes(e.key)) {
                         e.preventDefault();
-                        this.activeDirections.add(e.key);
-                        // 按住任意方向键时加速
-                        if (this.activeDirections.size >= 1) {
-                            this.gameSpeed = this.baseGameSpeed / 4;
-                        }
+                        // 按住方向键时加速到5倍速度
+                        this.activeKeys.add(e.key);
+                        this.gameSpeed = Math.floor(this.baseGameSpeed / 5);
                     }
 
                     switch (e.key) {
@@ -615,10 +614,12 @@
                     // 方向键释放时恢复原速度
                     const directionKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 's', 'S', 'a', 'A', 'd', 'D'];
                     if (directionKeys.includes(e.key)) {
-                        this.activeDirections.delete(e.key);
-                        // 如果没有方向键被按住，恢复原速度
-                        if (this.activeDirections.size === 0) {
+                        this.activeKeys.delete(e.key);
+                        if (this.activeKeys.size === 0) {
                             this.gameSpeed = this.baseGameSpeed;
+                        } else {
+                            // 还有其他方向键按住，继续加速
+                            this.gameSpeed = Math.floor(this.baseGameSpeed / 5);
                         }
                     }
                 });
@@ -723,7 +724,7 @@
                 this.state = GameState.PLAYING;
                 this.spawnFood();
                 this.updateUI();
-                this.activeDirections.clear(); // 清除所有加速状态
+                this.activeKeys.clear();
                 this.lastMoveTime = Date.now();
 
                 document.getElementById('game-over-menu').classList.add('hidden');
