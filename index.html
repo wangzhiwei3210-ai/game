@@ -1253,6 +1253,8 @@
                     this.state = GameState.PLAYING;
                     document.getElementById('pause-menu').classList.add('hidden');
                     document.getElementById('pause-btn').textContent = '暂停';
+                } else if (this.state === GameState.GAMEOVER) {
+                    this.restart();
                 }
             }
 
