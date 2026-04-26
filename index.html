@@ -425,7 +425,7 @@
                     }
 
                     // 动态计算当前速度：如果有方向键被按住，使用加速速度
-                    const currentSpeed = this.activeDirections.size > 0 ? this.baseGameSpeed / 2 : this.gameSpeed;
+                    const currentSpeed = this.activeDirections.size > 0 ? this.baseGameSpeed / 4 : this.gameSpeed;
 
                     // 只有当时间间隔达到要求时才更新
                     if (timestamp - this.lastTime >= currentSpeed) {
@@ -577,7 +577,7 @@
                         this.activeDirections.add(e.key);
                         // 按住任意方向键时加速
                         if (this.activeDirections.size >= 1) {
-                            this.gameSpeed = this.baseGameSpeed / 2;
+                            this.gameSpeed = this.baseGameSpeed / 4;
                         }
                     }
 
