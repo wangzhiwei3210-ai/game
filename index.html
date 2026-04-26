@@ -729,34 +729,178 @@
                 }
             }
 
-            // 绘制蛇
+            // 绘制蛇（卡通风格：条纹身体、尖尾巴、大眼睛）
             drawSnake() {
-                const padding = 2;
-                const size = this.gridSize - padding * 2;
+                const body = this.snake.body;
+                const dir = this.snake.direction;
+                const len = body.length;
+                const cellSize = this.gridSize;
+                const segSize = cellSize - 4;
+                const ctx = this.ctx;
 
-                this.snake.body.forEach((segment, index) => {
-                    const x = segment.x * this.gridSize + padding;
-                    const y = segment.y * this.gridSize + padding;
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
 
-                    // 蛇头和蛇身颜色（加速时蛇头变红色）
-                    const headColor = this.activeKeys.size > 0 ? '#ff4444' : GAME_CONFIG.SNAKE_COLOR;
-                    this.ctx.fillStyle = index === 0 ? headColor : GAME_CONFIG.SNAKE_BODY_COLOR;
+                // 先画身体和尾巴（蛇头下层）
+                for (let i = len - 1; i > 0; i--) {
+                    const seg = body[i];
+                    const cx = seg.x * cellSize + cellSize / 2;
+                    const cy = seg.y * cellSize + cellSize / 2;
 
-                    // 绘制圆角矩形
-                    this.drawRoundedRect(x, y, size, size, 4);
-
-                    // 添加阴影
-                    this.ctx.shadowColor = GAME_CONFIG.SHADOW_COLOR;
-                    this.ctx.shadowBlur = 4;
-                    this.ctx.shadowOffsetX = 2;
-                    this.ctx.shadowOffsetY = 2;
-                });
+                    if (i >= len - 3) {
+                        // 尾巴 - 逐渐变细
+                        const t = (len - 1 - i) / 3;
+                        const tailSize = segSize * (0.35 + 0.65 * (1 - t));
+                        ctx.fillStyle = i % 2 === 0 ? '#5be08c' : '#1fa84d';
+                        ctx.shadowColor = GAME_CONFIG.SHADOW_COLOR;
+                        ctx.shadowBlur = 3;
+                        ctx.shadowOffsetX = 1;
+                        ctx.shadowOffsetY = 1;
+                        this.drawRoundedRect(
+                            cx - tailSize / 2, cy - tailSize / 2,
+                            tailSize, tailSize, tailSize / 2
+                        );
+                    } else {
+                        // 身体 - 交替深浅条纹
+                        ctx.fillStyle = i % 2 === 0 ? '#5be08c' : '#1fa84d';
+                        ctx.shadowColor = GAME_CONFIG.SHADOW_COLOR;
+                        ctx.shadowBlur = 4;
+                        ctx.shadowOffsetX = 2;
+                        ctx.shadowOffsetY = 2;
+                        this.drawRoundedRect(
+                            cx - segSize / 2, cy - segSize / 2,
+                            segSize, segSize, 5
+                        );
+                    }
+                }
 
                 // 重置阴影
-                this.ctx.shadowColor = 'transparent';
-                this.ctx.shadowBlur = 0;
-                this.ctx.shadowOffsetX = 0;
-                this.ctx.shadowOffsetY = 0;
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                // 画蛇头（最上层）
+                if (len > 0) {
+                    this.drawSnakeHead(body[0], dir, cellSize, segSize);
+                }
+            }
+
+            // 绘制卡通蛇头（圆头、大眼睛，舌头在格子内部）
+            drawSnakeHead(segment, dir, cellSize, segSize) {
+                const cx = segment.x * cellSize + cellSize / 2;
+                const cy = segment.y * cellSize + cellSize / 2;
+                const isAccel = this.activeKeys.size > 0;
+                const headColor = isAccel ? '#ff4444' : GAME_CONFIG.SNAKE_COLOR;
+                const headSize = segSize + 2;
+                const halfH = headSize / 2; // 9px
+                const ctx = this.ctx;
+
+                // 蛇头主体
+                ctx.fillStyle = headColor;
+                ctx.shadowColor = GAME_CONFIG.SHADOW_COLOR;
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                this.drawRoundedRect(cx - halfH, cy - halfH, headSize, headSize, 8);
+
+                // 小鼻子（在蛇头内部边缘）
+                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = '#4ade80';
+                const noseX = cx + dir.x * (halfH - 2);
+                const noseY = cy + dir.y * (halfH - 2);
+                ctx.beginPath();
+                ctx.arc(noseX, noseY, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 叉舌（全部在蛇头内部）
+                const tStart = 4;    // 从中心往前 4px 开始画
+                const tEnd = 1;      // 到距边缘 1px 处结束
+                const sx = cx + dir.x * tStart;
+                const sy = cy + dir.y * tStart;
+                const ex = cx + dir.x * (halfH - tEnd);
+                const ey = cy + dir.y * (halfH - tEnd);
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(sx, sy);
+                ctx.lineTo(ex, ey);
+                ctx.stroke();
+
+                // 分叉
+                const fork = 1;
+                if (dir.x !== 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(ex, ey);
+                    ctx.lineTo(ex + dir.x * fork, ey - fork);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(ex, ey);
+                    ctx.lineTo(ex + dir.x * fork, ey + fork);
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(ex, ey);
+                    ctx.lineTo(ex - fork, ey + dir.y * fork);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(ex, ey);
+                    ctx.lineTo(ex + fork, ey + dir.y * fork);
+                    ctx.stroke();
+                }
+                ctx.lineCap = 'butt';
+
+                // 眼睛
+                const eyeR = segSize * 0.11;
+                const spread = segSize * 0.22;
+                let e1, e2;
+
+                if (dir.x === 1) {
+                    e1 = { x: cx + spread * 0.6, y: cy - spread };
+                    e2 = { x: cx + spread * 0.6, y: cy + spread };
+                } else if (dir.x === -1) {
+                    e1 = { x: cx - spread * 0.6, y: cy - spread };
+                    e2 = { x: cx - spread * 0.6, y: cy + spread };
+                } else if (dir.y === -1) {
+                    e1 = { x: cx - spread, y: cy - spread * 0.6 };
+                    e2 = { x: cx + spread, y: cy - spread * 0.6 };
+                } else {
+                    e1 = { x: cx - spread, y: cy + spread * 0.6 };
+                    e2 = { x: cx + spread, y: cy + spread * 0.6 };
+                }
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(e1.x, e1.y, eyeR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(e2.x, e2.y, eyeR, 0, Math.PI * 2);
+                ctx.fill();
+
+                const pR = eyeR * 0.55;
+                ctx.fillStyle = '#1a1a2e';
+                ctx.beginPath();
+                ctx.arc(e1.x + dir.x * 1.5, e1.y + dir.y * 1.5, pR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(e2.x + dir.x * 1.5, e2.y + dir.y * 1.5, pR, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(e1.x - dir.x, e1.y - dir.y, pR * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(e2.x - dir.x, e2.y - dir.y, pR * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
             }
 
             // 绘制食物
