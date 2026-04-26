@@ -624,22 +624,37 @@
                     }
                 });
 
-                // 虚拟方向键
-                document.getElementById('btn-up').addEventListener('touchstart', (e) => {
+                // 虚拟方向键（支持按住加速）
+                const touchConfig = {
+                    'btn-up': { key: 'touch-up', dx: 0, dy: -1 },
+                    'btn-down': { key: 'touch-down', dx: 0, dy: 1 },
+                    'btn-left': { key: 'touch-left', dx: -1, dy: 0 },
+                    'btn-right': { key: 'touch-right', dx: 1, dy: 0 },
+                };
+
+                const handleTouchStart = (config) => (e) => {
                     e.preventDefault();
-                    if (this.state === GameState.PLAYING) this.snake.setDirection(0, -1);
-                });
-                document.getElementById('btn-down').addEventListener('touchstart', (e) => {
+                    if (this.state !== GameState.PLAYING) return;
+                    this.activeKeys.add(config.key);
+                    this.gameSpeed = Math.floor(this.baseGameSpeed / 5);
+                    this.snake.setDirection(config.dx, config.dy);
+                };
+
+                const handleTouchEnd = (config) => (e) => {
                     e.preventDefault();
-                    if (this.state === GameState.PLAYING) this.snake.setDirection(0, 1);
-                });
-                document.getElementById('btn-left').addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (this.state === GameState.PLAYING) this.snake.setDirection(-1, 0);
-                });
-                document.getElementById('btn-right').addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    if (this.state === GameState.PLAYING) this.snake.setDirection(1, 0);
+                    this.activeKeys.delete(config.key);
+                    if (this.activeKeys.size === 0) {
+                        this.gameSpeed = this.baseGameSpeed;
+                    } else {
+                        this.gameSpeed = Math.floor(this.baseGameSpeed / 5);
+                    }
+                };
+
+                Object.entries(touchConfig).forEach(([id, config]) => {
+                    const el = document.getElementById(id);
+                    el.addEventListener('touchstart', handleTouchStart(config));
+                    el.addEventListener('touchend', handleTouchEnd(config));
+                    el.addEventListener('touchcancel', handleTouchEnd(config));
                 });
 
                 // 难度选择
