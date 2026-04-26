@@ -137,24 +137,14 @@
         }
 
         .menu h2 {
-            margin: 0;
+            margin: 0 0 20px 0;
             font-size: 32px;
-        }
-
-        .menu-header {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            margin-bottom: 20px;
-            width: 100%;
         }
 
         .menu-close {
             position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
+            top: 12px;
+            right: 16px;
             width: 32px;
             height: 32px;
             border: none;
@@ -338,7 +328,7 @@
             }
 
             .menu {
-                padding: 24px 20px;
+                padding: 40px 20px 24px;
                 max-width: 85vw;
                 max-height: 80vh;
                 overflow-y: auto;
@@ -348,11 +338,9 @@
                 font-size: 24px;
             }
 
-            .menu-header {
-                margin-bottom: 14px;
-            }
-
             .menu-close {
+                top: 8px;
+                right: 10px;
                 width: 28px;
                 height: 28px;
                 font-size: 15px;
@@ -372,7 +360,7 @@
 
         @media (max-width: 380px) {
             .menu {
-                padding: 18px 14px;
+                padding: 34px 14px 18px;
                 max-width: 90vw;
             }
 
@@ -381,6 +369,8 @@
             }
 
             .menu-close {
+                top: 5px;
+                right: 6px;
                 width: 24px;
                 height: 24px;
                 font-size: 13px;
@@ -434,19 +424,15 @@
     </div>
 
     <div id="pause-menu" class="menu hidden">
-        <div class="menu-header">
-            <h2>游戏暂停</h2>
-            <button class="menu-close" data-close="pause-menu">✕</button>
-        </div>
+        <button class="menu-close" data-close="pause-menu">✕</button>
+        <h2>游戏暂停</h2>
         <button id="resume-btn" class="menu-btn">继续游戏</button>
         <button id="restart-btn" class="menu-btn">重新开始</button>
     </div>
 
     <div id="game-over-menu" class="menu hidden">
-        <div class="menu-header">
-            <h2>游戏结束</h2>
-            <button class="menu-close" data-close="gameover">✕</button>
-        </div>
+        <button class="menu-close" data-close="gameover">✕</button>
+        <h2>游戏结束</h2>
         <p class="final-score">最终得分: <span id="final-score">0</span></p>
         <div id="new-record" style="color:#ffd700;font-size:16px;margin-bottom:15px;display:none;">🎉 新纪录！</div>
         <button id="revive-btn" class="menu-btn revive-btn">💪 复活一次</button>
@@ -456,10 +442,8 @@
 
     <!-- 排行榜 -->
     <div id="leaderboard-menu" class="menu hidden">
-        <div class="menu-header">
-            <h2>🏆 排行榜</h2>
-            <button class="menu-close" data-close="leaderboard">✕</button>
-        </div>
+        <button class="menu-close" data-close="leaderboard">✕</button>
+        <h2>🏆 排行榜</h2>
         <div id="leaderboard-content">
             <div class="no-scores">暂无记录</div>
         </div>
