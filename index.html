@@ -170,6 +170,108 @@
             transform: translateY(-2px);
         }
 
+        .leaderboard-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(251, 191, 36, 0.3);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .leaderboard-btn:hover {
+            background: rgba(251, 191, 36, 0.5);
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 8px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .leaderboard-table th {
+            font-size: 14px;
+            opacity: 0.7;
+            font-weight: normal;
+        }
+
+        .leaderboard-table td {
+            font-size: 16px;
+        }
+
+        .rank-badge {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .rank-1 { background: #ffd700; color: #1e3c72; }
+        .rank-2 { background: #c0c0c0; color: #1e3c72; }
+        .rank-3 { background: #cd7f32; color: #1e3c72; }
+        .rank-other { background: rgba(255,255,255,0.1); color: white; }
+
+        .current-score-row td {
+            background: rgba(74, 222, 128, 0.2);
+            font-weight: bold;
+        }
+
+        .no-scores {
+            opacity: 0.6;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        .share-btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-top: 10px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            background: transparent;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .share-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
         @media (max-width: 768px) {
             .mobile-controls {
                 display: block;
@@ -211,7 +313,11 @@
         </div>
 
         <button id="pause-btn" class="pause-btn">暂停</button>
+        <button id="leaderboard-btn" class="leaderboard-btn">🏆 排行榜</button>
     </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast" class="toast"></div>
 
     <canvas id="game-canvas"></canvas>
 
@@ -235,7 +341,18 @@
     <div id="game-over-menu" class="menu hidden">
         <h2>游戏结束</h2>
         <p class="final-score">最终得分: <span id="final-score">0</span></p>
+        <div id="new-record" style="color:#ffd700;font-size:16px;margin-bottom:15px;display:none;">🎉 新纪录！</div>
+        <button id="share-score-btn" class="share-btn" style="margin-bottom:15px;">📤 分享成绩</button>
         <button id="play-again-btn" class="menu-btn">再玩一次</button>
+    </div>
+
+    <!-- 排行榜 -->
+    <div id="leaderboard-menu" class="menu hidden">
+        <h2>🏆 排行榜</h2>
+        <div id="leaderboard-content">
+            <div class="no-scores">暂无记录</div>
+        </div>
+        <button id="leaderboard-close-btn" class="menu-btn">关闭</button>
     </div>
 
     <script>
@@ -361,6 +478,7 @@
                 this.baseGameSpeed = DIFFICULTIES.medium;
                 this.activeKeys = new Set();
                 this.lastTime = null; // 使用null表示尚未初始化
+                this._lastScoreTimestamp = 0;
 
                 // 绑定输入处理
                 this.bindInput();
@@ -604,7 +722,11 @@
                         case ' ':
                         case 'Escape':
                             e.preventDefault();
-                            this.togglePause();
+                            if (!document.getElementById('leaderboard-menu').classList.contains('hidden')) {
+                                this.closeLeaderboard();
+                            } else {
+                                this.togglePause();
+                            }
                             break;
                     }
                 });
@@ -691,12 +813,155 @@
                     this.gridWidth = Math.floor(this.canvas.width / this.gridSize);
                     this.gridHeight = Math.floor(this.canvas.height / this.gridSize);
                 });
+
+                // 排行榜按钮
+                document.getElementById('leaderboard-btn').addEventListener('click', () => {
+                    this.openLeaderboard();
+                });
+
+                document.getElementById('leaderboard-close-btn').addEventListener('click', () => {
+                    this.closeLeaderboard();
+                });
+
+                // 分享成绩按钮
+                document.getElementById('share-score-btn').addEventListener('click', () => {
+                    const text = `我在贪吃蛇游戏中得了 ${this.score} 分！来挑战吧 🐍`;
+                    if (navigator.share) {
+                        navigator.share({ title: '贪吃蛇游戏', text }).catch(() => {});
+                    } else if (navigator.clipboard) {
+                        navigator.clipboard.writeText(text).then(() => {
+                            this.showToast('成绩已复制，快去分享吧！');
+                        }).catch(() => {
+                            this.fallbackCopy(text);
+                        });
+                    } else {
+                        this.fallbackCopy(text);
+                    }
+                });
+            }
+
+            // 兼容的复制方式
+            fallbackCopy(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    this.showToast('成绩已复制，快去分享吧！');
+                } catch {
+                    this.showToast('复制失败，请手动分享截图');
+                }
+                document.body.removeChild(ta);
             }
 
             // 更新 UI
             updateUI() {
                 document.getElementById('score').textContent = this.score;
                 document.getElementById('highscore').textContent = this.highScore;
+            }
+
+            // 获取当前难度文字
+            getDifficultyName() {
+                const speed = this.baseGameSpeed;
+                if (speed === 600) return '慢速';
+                if (speed === 400) return '中速';
+                if (speed === 240) return '快速';
+                return '中速';
+            }
+
+            // 加载排行榜
+            loadLeaderboard() {
+                try {
+                    const data = localStorage.getItem('snake_leaderboard');
+                    return data ? JSON.parse(data) : [];
+                } catch {
+                    return [];
+                }
+            }
+
+            // 保存排行榜
+            saveLeaderboard(scores) {
+                localStorage.setItem('snake_leaderboard', JSON.stringify(scores));
+            }
+
+            // 添加分数到排行榜，返回是否新纪录
+            addScoreToLeaderboard(score) {
+                const scores = this.loadLeaderboard();
+                const timestamp = Date.now();
+                const entry = {
+                    score,
+                    date: new Date().toLocaleDateString('zh-CN'),
+                    diff: this.getDifficultyName(),
+                    timestamp
+                };
+                scores.push(entry);
+                scores.sort((a, b) => b.score - a.score || a.timestamp - b.timestamp);
+                if (scores.length > 10) scores.length = 10;
+                this.saveLeaderboard(scores);
+                this._lastScoreTimestamp = timestamp;
+                // 判断是否进入排行榜
+                const rank = scores.findIndex(s => s.timestamp === timestamp);
+                return rank >= 0;
+            }
+
+            // 渲染排行榜
+            renderLeaderboard() {
+                const scores = this.loadLeaderboard();
+                const container = document.getElementById('leaderboard-content');
+
+                if (scores.length === 0) {
+                    container.innerHTML = '<div class="no-scores">暂无记录</div>';
+                    return;
+                }
+
+                let html = `<table class="leaderboard-table">
+                    <thead><tr><th>#</th><th>分数</th><th>难度</th><th>日期</th></tr></thead><tbody>`;
+
+                scores.forEach((entry, index) => {
+                    const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+                    const rankLabel = index < 3 ? ['🥇', '🥈', '🥉'][index] : (index + 1);
+                    const isCurrent = entry.timestamp === this._lastScoreTimestamp;
+                    const rowClass = isCurrent ? 'current-score-row' : '';
+                    html += `<tr class="${rowClass}">
+                        <td><span class="rank-badge ${rankClass}">${rankLabel}</span></td>
+                        <td>${entry.score}</td>
+                        <td>${entry.diff}</td>
+                        <td>${entry.date}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            }
+
+            // 打开排行榜
+            openLeaderboard() {
+                this.renderLeaderboard();
+                document.getElementById('leaderboard-menu').classList.remove('hidden');
+                this._previousState = this.state;
+                if (this.state === GameState.PLAYING) {
+                    this.state = GameState.PAUSED;
+                }
+            }
+
+            // 关闭排行榜
+            closeLeaderboard() {
+                document.getElementById('leaderboard-menu').classList.add('hidden');
+                if (this._previousState === GameState.PLAYING) {
+                    this.state = GameState.PLAYING;
+                }
+            }
+
+            // Toast 提示
+            showToast(msg) {
+                const el = document.getElementById('toast');
+                el.textContent = msg;
+                el.classList.add('show');
+                clearTimeout(this._toastTimer);
+                this._toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
             }
 
             // 切换暂停
@@ -721,10 +986,15 @@
                     this.highScore = this.score;
                     localStorage.setItem('snake_highscore', this.highScore);
                 }
+
+                // 添加到排行榜
+                const isNewRecord = this.addScoreToLeaderboard(this.score);
+
                 this.updateUI();
 
                 // 显示游戏结束菜单
                 document.getElementById('final-score').textContent = this.score;
+                document.getElementById('new-record').style.display = isNewRecord ? 'block' : 'none';
                 document.getElementById('game-over-menu').classList.remove('hidden');
                 document.getElementById('pause-btn').textContent = '重新开始';
             }
@@ -744,6 +1014,7 @@
 
                 document.getElementById('game-over-menu').classList.add('hidden');
                 document.getElementById('pause-menu').classList.add('hidden');
+                document.getElementById('leaderboard-menu').classList.add('hidden');
                 document.getElementById('pause-btn').textContent = '暂停';
             }
         }
